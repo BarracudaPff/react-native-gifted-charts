@@ -1,10 +1,14 @@
 import React, {useEffect, useState} from 'react';
-import {TouchableOpacity} from 'react-native';
+import {Dimensions, TouchableOpacity} from 'react-native';
 import {Alert} from 'react-native';
 import {View, Text, StyleSheet} from 'react-native';
 import {BarChart, LineChart} from './src';
+import {MyApp} from "./MyApp";
 
 const App = () => {
+  const {height, width} = Dimensions.get("window")
+  return <MyApp width={width} height={300}/>
+
   const [toggle, setToggle] = useState(true);
   // useEffect(() => {
   //   setTimeout(() => {

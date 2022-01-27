@@ -1,3 +1,4 @@
+// @ts-ignore
 import React, {
   Fragment,
   useCallback,
@@ -11,7 +12,7 @@ import {
   Animated,
   Easing,
   Text,
-  ColorValue,
+  ColorValue, StyleProp, TextStyle,
 } from 'react-native';
 import {styles} from './styles';
 import Svg, {
@@ -29,6 +30,7 @@ let initialData = null;
 let animations = [];
 
 type propTypes = {
+  direction?: "start" | "end";
   height?: number;
   noOfSections?: number;
   maxValue?: number;
@@ -101,13 +103,16 @@ type propTypes = {
   xAxisIndicesColor?: ColorValue;
   yAxisIndicesColor?: ColorValue;
 
+  xAxisLine?: boolean;
+  yAxisLine?: boolean;
+
   color?: string;
   color1?: string;
   color2?: string;
   color3?: string;
   yAxisThickness?: number;
   yAxisColor?: ColorValue;
-  yAxisTextStyle?: any;
+  yAxisTextStyle?: StyleProp<TextStyle>;
   showFractionalValues?: Boolean;
   roundToDigits?: number;
   yAxisLabelWidth?: number;
@@ -185,6 +190,7 @@ type propTypes = {
   textShiftX?: number;
   textShiftY?: number;
   yAxisLabelTexts?: Array<string>;
+  yAxisLabelModify?: (value: string) => string
   width?: number;
   yAxisLabelPrefix?: String;
   yAxisLabelSuffix?: String;
@@ -199,8 +205,9 @@ type referenceConfigType = {
 };
 type itemType = {
   value?: number;
-  label: String;
-  labelComponent: Function;
+  label?: String;
+  labelComponent?: Function;
+  extraLabel?: String,
   labelTextStyle?: any;
   dataPointText?: string;
   textShiftX?: number;
@@ -216,9 +223,11 @@ type itemType = {
   dataPointShape?: string;
   customDataPoint?: Function;
 
+  stripFullHeight?: number;
   stripHeight?: number;
   stripWidth?: number;
   stripColor?: ColorValue | String | any;
+  stripFullColor?: ColorValue | String | any;
   stripOpacity?: number;
 
   focusedDataPointShape?: String;
@@ -234,6 +243,7 @@ type itemType = {
   dataPointLabelShiftX?: number;
   dataPointLabelShiftY?: number;
   showStrip?: Boolean;
+  showFullStrip?: Boolean;
 
   showVerticalLine?: Boolean;
   verticalLineColor?: string;
@@ -443,7 +453,7 @@ export const LineChart = (props: propTypes) => {
 
   const spacing = props.spacing === 0 ? 0 : props.spacing || 60;
 
-  const xAxisThickness = props.xAxisThickness || 1;
+  const xAxisThickness = props.xAxisThickness ?? 1;
   const xAxisColor = props.xAxisColor || 'black';
 
   let totalWidth = spacing;
@@ -621,16 +631,16 @@ export const LineChart = (props: propTypes) => {
           p2Array.push([
             initialSpacing - dataPointsWidth2 / 2 + spacing * i,
             containerHeight +
-              10 -
-              (data2[i].value * containerHeight) / maxValue,
+            10 -
+            (data2[i].value * containerHeight) / maxValue,
           ]);
         }
         if (data3.length) {
           p3Array.push([
             initialSpacing - dataPointsWidth3 / 2 + spacing * i,
             containerHeight +
-              10 -
-              (data3[i].value * containerHeight) / maxValue,
+            10 -
+            (data3[i].value * containerHeight) / maxValue,
           ]);
         }
       }
@@ -828,7 +838,7 @@ export const LineChart = (props: propTypes) => {
   const xAxisIndicesColor = props.xAxisIndicesColor || 'black';
   const yAxisIndicesColor = props.yAxisIndicesColor || 'black';
 
-  const yAxisThickness = props.yAxisThickness || 1;
+  const yAxisThickness = props.yAxisThickness ?? 1;
   const yAxisColor = props.yAxisColor || 'black';
   const yAxisTextStyle = props.yAxisTextStyle;
   const showFractionalValues = props.showFractionalValues || false;
@@ -873,14 +883,14 @@ export const LineChart = (props: propTypes) => {
       : props.referenceLine1Position || containerHeight / 2;
   const referenceLine1Config = props.referenceLine1Config
     ? {
-        thickness: props.referenceLine1Config.thickness || rulesThickness,
-        width:
-          (props.referenceLine1Config.width || props.width || totalWidth) + 11,
-        color: props.referenceLine1Config.color || 'black',
-        type: props.referenceLine1Config.type || rulesType,
-        dashWidth: props.referenceLine1Config.dashWidth || dashWidth,
-        dashGap: props.referenceLine1Config.dashGap || dashGap,
-      }
+      thickness: props.referenceLine1Config.thickness || rulesThickness,
+      width:
+        (props.referenceLine1Config.width || props.width || totalWidth) + 11,
+      color: props.referenceLine1Config.color || 'black',
+      type: props.referenceLine1Config.type || rulesType,
+      dashWidth: props.referenceLine1Config.dashWidth || dashWidth,
+      dashGap: props.referenceLine1Config.dashGap || dashGap,
+    }
     : defaultReferenceConfig;
 
   const showReferenceLine2 = props.showReferenceLine2 || false;
@@ -890,14 +900,14 @@ export const LineChart = (props: propTypes) => {
       : props.referenceLine2Position || (3 * containerHeight) / 2;
   const referenceLine2Config = props.referenceLine2Config
     ? {
-        thickness: props.referenceLine2Config.thickness || rulesThickness,
-        width:
-          (props.referenceLine2Config.width || props.width || totalWidth) + 11,
-        color: props.referenceLine2Config.color || 'black',
-        type: props.referenceLine2Config.type || rulesType,
-        dashWidth: props.referenceLine2Config.dashWidth || dashWidth,
-        dashGap: props.referenceLine2Config.dashGap || dashGap,
-      }
+      thickness: props.referenceLine2Config.thickness || rulesThickness,
+      width:
+        (props.referenceLine2Config.width || props.width || totalWidth) + 11,
+      color: props.referenceLine2Config.color || 'black',
+      type: props.referenceLine2Config.type || rulesType,
+      dashWidth: props.referenceLine2Config.dashWidth || dashWidth,
+      dashGap: props.referenceLine2Config.dashGap || dashGap,
+    }
     : defaultReferenceConfig;
 
   const showReferenceLine3 = props.showReferenceLine3 || false;
@@ -907,14 +917,14 @@ export const LineChart = (props: propTypes) => {
       : props.referenceLine3Position || containerHeight / 3;
   const referenceLine3Config = props.referenceLine3Config
     ? {
-        thickness: props.referenceLine3Config.thickness || rulesThickness,
-        width:
-          (props.referenceLine3Config.width || props.width || totalWidth) + 11,
-        color: props.referenceLine3Config.color || 'black',
-        type: props.referenceLine3Config.type || rulesType,
-        dashWidth: props.referenceLine3Config.dashWidth || dashWidth,
-        dashGap: props.referenceLine3Config.dashGap || dashGap,
-      }
+      thickness: props.referenceLine3Config.thickness || rulesThickness,
+      width:
+        (props.referenceLine3Config.width || props.width || totalWidth) + 11,
+      color: props.referenceLine3Config.color || 'black',
+      type: props.referenceLine3Config.type || rulesType,
+      dashWidth: props.referenceLine3Config.dashWidth || dashWidth,
+      dashGap: props.referenceLine3Config.dashGap || dashGap,
+    }
     : defaultReferenceConfig;
 
   // console.log('data', data);
@@ -924,11 +934,15 @@ export const LineChart = (props: propTypes) => {
     if (props.showFractionalValues || props.roundToDigits) {
       value = parseFloat(value.toFixed(props.roundToDigits || 1));
     }
-    horizSections.push({
-      value: props.yAxisLabelTexts
-        ? props.yAxisLabelTexts[noOfSections - i] ?? value.toString()
-        : value.toString(),
-    });
+    if (props.yAxisLabelModify) {
+      horizSections.push({value: props.yAxisLabelModify(value.toString())})
+    } else {
+      horizSections.push({
+        value: props.yAxisLabelTexts
+          ? props.yAxisLabelTexts[noOfSections - i] ?? value.toString()
+          : value.toString(),
+      });
+    }
   }
 
   const renderLabel = (
@@ -936,6 +950,7 @@ export const LineChart = (props: propTypes) => {
     label: String,
     labelTextStyle: any,
     labelComponent: Function,
+    extraLabel?: String,
   ) => {
     return (
       <View
@@ -956,11 +971,14 @@ export const LineChart = (props: propTypes) => {
         {labelComponent ? (
           labelComponent()
         ) : (
-          <Text
-            style={[labelTextStyle, {textAlign: 'center'}]}
-            numberOfLines={1}>
-            {label || ''}
-          </Text>
+          <>
+            <Text style={[labelTextStyle, {textAlign: 'center'}]} numberOfLines={1}>
+              {label || ''}
+            </Text>
+            {extraLabel ? <Text style={[labelTextStyle, {textAlign: 'center'}]} numberOfLines={1}>
+              {extraLabel || ''}
+            </Text> : null}
+          </>
         )}
       </View>
     );
@@ -971,6 +989,7 @@ export const LineChart = (props: propTypes) => {
     label: String,
     labelTextStyle: any,
     labelComponent: Function,
+    extraLabel?: String,
   ) => {
     // console.log('label', label);
     return (
@@ -994,11 +1013,14 @@ export const LineChart = (props: propTypes) => {
         {labelComponent ? (
           labelComponent()
         ) : (
-          <Text
-            style={[labelTextStyle, {textAlign: 'center'}]}
-            numberOfLines={1}>
-            {label || ''}
-          </Text>
+          <>
+            <Text style={[labelTextStyle, {textAlign: 'center'}]} numberOfLines={1}>
+              {label || ''}
+            </Text>
+            {extraLabel ? <Text style={[labelTextStyle, {textAlign: 'center'}]} numberOfLines={1}>
+              {extraLabel || ''}
+            </Text> : null}
+          </>
         )}
       </Animated.View>
     );
@@ -1129,12 +1151,12 @@ export const LineChart = (props: propTypes) => {
                         position: 'absolute',
                         bottom:
                           (referenceLine1Position * containerHeight) /
-                            maxValue +
+                          maxValue +
                           stepHeight / 2 -
                           referenceLine1Config.thickness / 2,
                         transform: [{translateY: containerHeight}],
                       }}>
-                      <Rule config={referenceLine1Config} />
+                      <Rule config={referenceLine1Config}/>
                     </View>
                   ) : null}
                   {index === 0 && showReferenceLine2 ? (
@@ -1143,12 +1165,12 @@ export const LineChart = (props: propTypes) => {
                         position: 'absolute',
                         bottom:
                           (referenceLine2Position * containerHeight) /
-                            maxValue +
+                          maxValue +
                           stepHeight / 2 -
                           referenceLine2Config.thickness / 2,
                         transform: [{translateY: containerHeight}],
                       }}>
-                      <Rule config={referenceLine2Config} />
+                      <Rule config={referenceLine2Config}/>
                     </View>
                   ) : null}
                   {index === 0 && showReferenceLine3 ? (
@@ -1157,12 +1179,12 @@ export const LineChart = (props: propTypes) => {
                         position: 'absolute',
                         bottom:
                           (referenceLine3Position * containerHeight) /
-                            maxValue +
+                          maxValue +
                           stepHeight / 2 -
                           referenceLine3Config.thickness / 2,
                         transform: [{translateY: containerHeight}],
                       }}>
-                      <Rule config={referenceLine3Config} />
+                      <Rule config={referenceLine3Config}/>
                     </View>
                   ) : null}
                   {showXAxisIndices && index !== noOfSections ? (
@@ -1261,6 +1283,8 @@ export const LineChart = (props: propTypes) => {
         dataPointLabelComponent = item.dataPointLabelComponent;
       }
 
+      const stripFullHeight =
+        item.stripFullHeight === 0 ? 0 : item.stripFullHeight || stripHeight;
       const currentStripHeight =
         item.stripHeight === 0 ? 0 : item.stripHeight || stripHeight;
       const currentStripWidth =
@@ -1268,6 +1292,7 @@ export const LineChart = (props: propTypes) => {
       const currentStripOpacity =
         item.stripOpacity === 0 ? 0 : item.stripOpacity || stripOpacity;
       const currentStripColor = item.stripColor || stripColor;
+      const stripFullColor = item.stripFullColor || stripColor;
 
       return (
         <Fragment key={index}>
@@ -1305,9 +1330,9 @@ export const LineChart = (props: propTypes) => {
                 currentStripHeight
                   ? containerHeight - currentStripHeight + 8
                   : containerHeight -
-                    dataPointsHeight / 2 +
-                    20 -
-                    (item.value * containerHeight) / maxValue
+                  dataPointsHeight / 2 +
+                  20 -
+                  (item.value * containerHeight) / maxValue
               }
               width={currentStripWidth}
               height={
@@ -1316,6 +1341,26 @@ export const LineChart = (props: propTypes) => {
               }
               opacity={currentStripOpacity}
               fill={currentStripColor}
+            />
+          ) : null}
+          {item.showFullStrip ? (
+            <Rect
+              x={initialSpacing + (spacing * index - dataPointsWidth / 2)}
+              y={
+                stripFullHeight
+                  ? containerHeight - stripFullHeight + 8
+                  : containerHeight -
+                  dataPointsHeight / 2 +
+                  20 -
+                  (item.value * containerHeight) / maxValue
+              }
+              width={currentStripWidth}
+              height={
+                stripFullHeight ||
+                containerHeight - dataPointsHeight / 2 + 20
+              }
+              opacity={currentStripOpacity}
+              fill={stripFullColor}
             />
           ) : null}
           {customDataPoint ? (
@@ -1398,9 +1443,9 @@ export const LineChart = (props: propTypes) => {
                       (item.dataPointLabelWidth
                         ? item.dataPointLabelWidth + 20
                         : props.dataPointLabelWidth
-                        ? props.dataPointLabelWidth + 20
-                        : 50) /
-                        2 +
+                          ? props.dataPointLabelWidth + 20
+                          : 50) /
+                      2 +
                       spacing * index,
                   },
                 ]}>
@@ -1521,39 +1566,39 @@ export const LineChart = (props: propTypes) => {
 
           {!hideDataPoints1
             ? renderDataPoints(
-                data,
-                dataPointsShape1,
-                dataPointsWidth1,
-                dataPointsHeight1,
-                dataPointsColor1,
-                dataPointsRadius1,
-                textColor1,
-                textFontSize1,
-              )
+              data,
+              dataPointsShape1,
+              dataPointsWidth1,
+              dataPointsHeight1,
+              dataPointsColor1,
+              dataPointsRadius1,
+              textColor1,
+              textFontSize1,
+            )
             : null}
           {!hideDataPoints2
             ? renderDataPoints(
-                data2,
-                dataPointsShape2,
-                dataPointsWidth2,
-                dataPointsHeight2,
-                dataPointsColor2,
-                dataPointsRadius2,
-                textColor2,
-                textFontSize2,
-              )
+              data2,
+              dataPointsShape2,
+              dataPointsWidth2,
+              dataPointsHeight2,
+              dataPointsColor2,
+              dataPointsRadius2,
+              textColor2,
+              textFontSize2,
+            )
             : null}
           {!hideDataPoints3
             ? renderDataPoints(
-                data3,
-                dataPointsShape3,
-                dataPointsWidth3,
-                dataPointsHeight3,
-                dataPointsColor3,
-                dataPointsRadius3,
-                textColor3,
-                textFontSize3,
-              )
+              data3,
+              dataPointsShape3,
+              dataPointsWidth3,
+              dataPointsHeight3,
+              dataPointsColor3,
+              dataPointsRadius3,
+              textColor3,
+              textFontSize3,
+            )
             : null}
         </Svg>
       </View>
@@ -1628,50 +1673,54 @@ export const LineChart = (props: propTypes) => {
 
           {!hideDataPoints1
             ? renderDataPoints(
-                data,
-                dataPointsShape1,
-                dataPointsWidth1,
-                dataPointsHeight1,
-                dataPointsColor1,
-                dataPointsRadius1,
-                textColor1,
-                textFontSize1,
-              )
+              data,
+              dataPointsShape1,
+              dataPointsWidth1,
+              dataPointsHeight1,
+              dataPointsColor1,
+              dataPointsRadius1,
+              textColor1,
+              textFontSize1,
+            )
             : null}
           {!hideDataPoints2
             ? renderDataPoints(
-                data2,
-                dataPointsShape2,
-                dataPointsWidth2,
-                dataPointsHeight2,
-                dataPointsColor2,
-                dataPointsRadius2,
-                textColor2,
-                textFontSize2,
-              )
+              data2,
+              dataPointsShape2,
+              dataPointsWidth2,
+              dataPointsHeight2,
+              dataPointsColor2,
+              dataPointsRadius2,
+              textColor2,
+              textFontSize2,
+            )
             : null}
           {!hideDataPoints3
             ? renderDataPoints(
-                data3,
-                dataPointsShape3,
-                dataPointsWidth3,
-                dataPointsHeight3,
-                dataPointsColor3,
-                dataPointsRadius3,
-                textColor3,
-                textFontSize3,
-              )
+              data3,
+              dataPointsShape3,
+              dataPointsWidth3,
+              dataPointsHeight3,
+              dataPointsColor3,
+              dataPointsRadius3,
+              textColor3,
+              textFontSize3,
+            )
             : null}
         </Svg>
       </Animated.View>
     );
   };
 
+  let scrollView: ScrollView = null
+
   return (
     <View style={[styles.container, {height: containerHeight}]}>
       {props.hideAxesAndRules !== true && renderHorizSections()}
       {/* {sectionsOverlay()} */}
       <ScrollView
+        // ref={ref => {scrollView = ref}}
+        // onContentSizeChange={() => scrollView?.scrollToEnd({animated: false})}
         horizontal
         contentContainerStyle={[
           {
@@ -1682,6 +1731,7 @@ export const LineChart = (props: propTypes) => {
           !props.width && {width: totalWidth},
         ]}
         scrollEnabled={!disableScroll}
+        // @ts-ignore
         showsHorizontalScrollIndicator={showScrollIndicator}
         style={[
           {
@@ -1733,73 +1783,73 @@ export const LineChart = (props: propTypes) => {
 
         {isAnimated
           ? renderAnimatedLine(
-              points,
-              animatedWidth,
-              thickness1,
-              color1,
-              fillPoints,
-              startFillColor1,
-              endFillColor1,
-              startOpacity1,
-              endOpacity1,
-            )
+            points,
+            animatedWidth,
+            thickness1,
+            color1,
+            fillPoints,
+            startFillColor1,
+            endFillColor1,
+            startOpacity1,
+            endOpacity1,
+          )
           : renderLine(
-              points,
-              thickness1,
-              color1,
-              fillPoints,
-              startFillColor1,
-              endFillColor1,
-              startOpacity1,
-              endOpacity1,
-            )}
+            points,
+            thickness1,
+            color1,
+            fillPoints,
+            startFillColor1,
+            endFillColor1,
+            startOpacity1,
+            endOpacity1,
+          )}
         {points2
           ? isAnimated
             ? renderAnimatedLine(
-                points2,
-                animatedWidth2,
-                thickness2,
-                color2,
-                fillPoints2,
-                startFillColor2,
-                endFillColor2,
-                startOpacity2,
-                endOpacity2,
-              )
+              points2,
+              animatedWidth2,
+              thickness2,
+              color2,
+              fillPoints2,
+              startFillColor2,
+              endFillColor2,
+              startOpacity2,
+              endOpacity2,
+            )
             : renderLine(
-                points2,
-                thickness2,
-                color2,
-                fillPoints2,
-                startFillColor2,
-                endFillColor2,
-                startOpacity2,
-                endOpacity2,
-              )
+              points2,
+              thickness2,
+              color2,
+              fillPoints2,
+              startFillColor2,
+              endFillColor2,
+              startOpacity2,
+              endOpacity2,
+            )
           : null}
         {points3
           ? isAnimated
             ? renderAnimatedLine(
-                points3,
-                animatedWidth3,
-                thickness3,
-                color3,
-                fillPoints3,
-                startFillColor3,
-                endFillColor3,
-                startOpacity3,
-                endOpacity3,
-              )
+              points3,
+              animatedWidth3,
+              thickness3,
+              color3,
+              fillPoints3,
+              startFillColor3,
+              endFillColor3,
+              startOpacity3,
+              endOpacity3,
+            )
             : renderLine(
-                points3,
-                thickness3,
-                color3,
-                fillPoints3,
-                startFillColor3,
-                endFillColor3,
-                startOpacity3,
-                endOpacity3,
-              )
+              points3,
+              thickness3,
+              color3,
+              fillPoints3,
+              startFillColor3,
+              endFillColor3,
+              startOpacity3,
+              endOpacity3,
+            )
           : null}
         {data.map((item: itemType, index: number) => {
           // console.log('item', item)
@@ -1807,17 +1857,19 @@ export const LineChart = (props: propTypes) => {
             <View key={index}>
               {isAnimated
                 ? renderAnimatedLabel(
-                    index,
-                    item.label,
-                    item.labelTextStyle,
-                    item.labelComponent,
-                  )
+                  index,
+                  item.label,
+                  item.labelTextStyle,
+                  item.labelComponent,
+                  item.extraLabel,
+                )
                 : renderLabel(
-                    index,
-                    item.label,
-                    item.labelTextStyle,
-                    item.labelComponent,
-                  )}
+                  index,
+                  item.label,
+                  item.labelTextStyle,
+                  item.labelComponent,
+                  item.extraLabel,
+                )}
               {/* {renderLabel(index, item.label, item.labelTextStyle)} */}
             </View>
           );
